@@ -15,6 +15,7 @@ import Profil from "./pages/Profil";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ConsulationValeurs from "./pages/ConsulationValeurs";
+import ValeursExtraites from "./pages/ValeursExtraites";
 
 function NavigationTracker() {
   const location = useLocation();
@@ -63,6 +64,8 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/utilisateurs" element={<Utilisateurs />} />
             <Route path="/valeurs" element={<Valeurs />} />
+            <Route path="/valeur-extrait" element={<ValeursExtraites />} />
+
             <Route path="/logactions" element={<LogsActions />} />
             <Route path="/directions" element={<Directions />} />
             <Route path="/profil" element={<Profil />} />

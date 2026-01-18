@@ -39,7 +39,7 @@ class LoginView(APIView):
             "utilisateur": {
                 "id": user.id_utilisateur,
                 "login": user.login,
-                "role": user.id_role.role_nom,
+                "role": user.id_role.role_nom if user.id_role else None,
             }
         })
 

@@ -1,12 +1,19 @@
 from rest_framework.permissions import BasePermission
 
 class IsAdmin(BasePermission):
+    
     def has_permission(self, request, view):
         return (
             request.user.is_authenticated
-            and hasattr(request.user, "id_role")
-            and request.user.id_role.role_nom.upper() == "ADMIN"
+            and (
+                request.user.is_superuser
+                or (
+                    request.user.id_role is not None
+                    and request.user.id_role.role_nom.upper() == "ADMIN"
+                )
+            )
         )
+
 class IsChefOrAdmin(BasePermission):
     def has_permission(self, request, view):
         user = request.user

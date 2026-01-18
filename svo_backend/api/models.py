@@ -119,27 +119,54 @@ class LogAction(models.Model):
     def __str__(self):
         return f"{self.utilisateur} - {self.action} - {self.date_action}"
 
+def today_date(): return timezone.now().date()
 
 class ValeurExtrait(models.Model):
-    id_extraction = models.AutoField(primary_key=True)
+    id_valeur_extrait = models.AutoField(primary_key=True)
 
-    codesh = models.CharField(max_length=255, null=True, blank=True)
-    date_extraction = models.DateField()
-    serdau = models.CharField(max_length=255, null=True, blank=True)
-    datedau = models.DateField(null=True, blank=True)
-    liquide = models.CharField(max_length=255, null=True, blank=True)
-    dateliquide = models.DateField(null=True, blank=True)
-    importateur = models.CharField(max_length=255, null=True, blank=True)
-    exportateur = models.CharField(max_length=255, null=True, blank=True)
-    pays_destinataire = models.CharField(max_length=255, null=True, blank=True)
-    description_article = models.CharField(max_length=255, null=True, blank=True)
-    poid_brut = models.DecimalField(max_digits=19, decimal_places=2, null=True, blank=True)
-    poid_net = models.DecimalField(max_digits=19, decimal_places=2, null=True, blank=True)
-    quantite = models.DecimalField(max_digits=19, decimal_places=2, null=True, blank=True)
-    unite = models.CharField(max_length=255, null=True, blank=True)
-    prix_article = models.DecimalField(max_digits=19, decimal_places=2, null=True, blank=True)
-    incoterm = models.CharField(max_length=255, null=True, blank=True)
-    id_utilisateur = models.ForeignKey(Utilisateur, on_delete=models.PROTECT, null=True, blank=True)
+    codesh_extrait = models.CharField(max_length=255, null=True, blank=True, default="")
+    descrip_extrait = models.CharField(max_length=255, null=True, blank=True, default="")
+    unite_extrait = models.CharField(max_length=255, null=True, blank=True, default="")
+    quantite_extrait = models.DecimalField(max_digits=19, decimal_places=2, default=0)
+    pu_fact_extrait = models.DecimalField(max_digits=19, decimal_places=2, default=0)
+    pu_redr_extrait = models.DecimalField(max_digits=19, decimal_places=2, null=True, blank=True, default=0)
+
+    methode_extrait = models.CharField(max_length=255, null=True, blank=True, default="")
+    incoterm_extrait = models.CharField(max_length=255, null=True, blank=True, default="")
+    devise_extrait = models.CharField(max_length=255, null=True, blank=True, default="USD")
+    source_extrait = models.CharField(max_length=255, null=True, blank=True, default="")
+    ref_fact_extrait = models.CharField(max_length=255, null=True, blank=True, default="")
+    status_extrait = models.CharField(max_length=255, null=True, blank=True, default="EN_ATTENTE")
+
+    details_marchandises_extrait = models.CharField(max_length=255, null=True, blank=True, default="")
+    poid_brut_extrait = models.DecimalField(max_digits=19, decimal_places=2, null=True, blank=True, default=0)
+    poid_net_extrait = models.DecimalField(max_digits=19, decimal_places=2, null=True, blank=True, default=0)
+
+    exportateur_extrait = models.CharField(max_length=255, null=True, blank=True, default="")
+    pays_destinataire_extrait = models.CharField(max_length=255, null=True, blank=True, default="")
+    importateur_extrait = models.CharField(max_length=255, null=True, blank=True, default="")
+    conditionnement_extrait = models.CharField(max_length=255, null=True, blank=True, default="")
+
+    # Correction ici : default doit renvoyer une date pure
+    date_effet_extrait = models.DateField(default=today_date)
+    date_ajout_extrait = models.DateTimeField(default=timezone.now)
+
+    # Correction ici : pas de default=None
+    image_extrait = models.ImageField(
+        upload_to="valeur/",
+        null=True,
+        blank=True
+    )
+
+    id_utilisateur_extrait = models.ForeignKey(
+        "Utilisateur",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
+    class Meta:
+        db_table = "VALEUR_EXTRAIT"
 
 class Valeur(models.Model):
     id_valeur = models.AutoField(primary_key=True)
@@ -178,7 +205,9 @@ class Valeur(models.Model):
 
     id_utilisateur = models.ForeignKey(
         "Utilisateur",
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
     )
 
     id_extraction = models.ForeignKey(
@@ -190,6 +219,7 @@ class Valeur(models.Model):
 
     class Meta:
         db_table = "VALEUR"
+        
 
 class HistoriqueValeur(models.Model):
     id_historique = models.AutoField(primary_key=True)
