@@ -1,0 +1,10 @@
+django
+oracledb
+djangorestframework
+djangorestframework-simplejwt
+django-filter
+django-extensions
+pandas
+Pillow
+django-cors-headers
+requests
