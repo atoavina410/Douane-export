@@ -149,6 +149,8 @@ export default function ValeurModal({ visible, onClose, onSave, initialData }) {
     setFormData((prev) => ({ ...prev, [fieldName]: value }));
   };
 
+  console.log(formData);
+
   const title = isEditMode ? "Modifier la Valeur" : "Nouvelle Saisie (Extrait)";
 
   return (

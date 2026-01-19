@@ -4,6 +4,7 @@ import { FileText, Calendar, Package, DollarSign, RefreshCw, Eye } from "lucide-
 
 const DetailExtraitModal = ({ item, onClose, onValidationSuccess }) => {
     const [isValidating, setIsValidating] = useState(false);
+    const [isRejecting, setIsRejecting] = useState(false);
     const [error, setError] = useState(null);
   
     const handleValidate = async () => {
@@ -43,7 +44,6 @@ const DetailExtraitModal = ({ item, onClose, onValidationSuccess }) => {
           id_extraction: item.id_valeur_extrait,            // lien vers l'extrait source
         };
 
-        console.log(payload.id_utilisateur_id);
   
         await api.post("/valeurs/", payload);
 
@@ -72,6 +72,27 @@ const DetailExtraitModal = ({ item, onClose, onValidationSuccess }) => {
       }
     };
 
+    const handleReject = async () => {
+      if (!item) return;
+      setIsRejecting(true);
+    
+      try {
+
+        // 2. Mise à jour du statut de l'extrait
+        await api.patch(`/extraits/${item.id_valeur_extrait}/`, {
+          status_extrait: "rejeté"
+        });
+
+        onValidationSuccess?.();
+        onClose();
+      
+      } catch (error) {
+        console.error("Erreur lors du rejet :", error);
+      } finally {
+        setIsRejecting(false);
+      }
+    };
+    
     if (!item) return null;
 
     const formatDate = (date) => (date ? new Date(date).toLocaleDateString("fr-FR") : "—");
@@ -151,10 +172,10 @@ const DetailExtraitModal = ({ item, onClose, onValidationSuccess }) => {
   
             <button
               onClick={handleValidate}
-              disabled={isValidating || item.status_extrait?.toLowerCase() === "validé"}
+              disabled={isValidating || item.status_extrait?.toLowerCase() === "validé" || item.status_extrait?.toLowerCase() === "rejeté"}
               className={`
                 px-6 py-2 rounded-lg text-white transition flex items-center gap-2
-                ${item.status_extrait?.toLowerCase() === "validé"
+                ${item.status_extrait?.toLowerCase() === "validé" || item.status_extrait?.toLowerCase() === "rejeté"
                   ? "bg-green-400 cursor-not-allowed"
                   : "bg-green-600 hover:bg-green-700"}
                 disabled:opacity-50
@@ -171,6 +192,29 @@ const DetailExtraitModal = ({ item, onClose, onValidationSuccess }) => {
                 "Valider"
               )}
             </button>
+            <button
+              onClick={handleReject}
+              disabled={isValidating || isRejecting || item.status_extrait?.toLowerCase() === "rejeté"}
+              className={`
+                px-6 py-2 rounded-lg text-white transition flex items-center gap-2
+                ${item.status_extrait?.toLowerCase() === "rejeté"
+                  ? "bg-red-400 cursor-not-allowed"
+                  : "bg-red-600 hover:bg-red-700"}
+                disabled:opacity-50
+              `}
+            >
+              {isRejecting ? (
+                <>
+                  <RefreshCw size={18} className="animate-spin" />
+                  Rejet en cours...
+                </>
+              ) : item.status_extrait?.toLowerCase() === "rejeté" ? (
+                "Déjà rejeté"
+              ) : (
+                "Rejeter"
+              )}
+            </button>
+
           </div>
         </div>
       </div>
@@ -187,9 +231,9 @@ const DetailField = ({ label, value, isLongText = false, important = false, badg
       } ${isLongText ? "whitespace-pre-wrap" : ""} ${
         badge
           ? "inline-block px-3 py-1 rounded-full text-sm " +
-            (value?.toLowerCase().includes("valide") || value?.toLowerCase().includes("approuve")
+            (value?.toLowerCase()=== "validé" || value?.toLowerCase().includes("validé")
               ? "bg-green-100 text-green-800"
-              : value?.toLowerCase().includes("rejete") || value?.toLowerCase().includes("refuse")
+              : value?.toLowerCase() === "rejeté" || value?.toLowerCase().includes("rejeté")
               ? "bg-red-100 text-red-800"
               : "bg-amber-100 text-amber-800")
           : ""
@@ -293,15 +337,22 @@ export default function ValeursExtraites() {
                       {item.devise_extrait || "XOF"}
                     </td>
                     <td className="p-4">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-xs ${
-                          item.status_extrait?.toLowerCase().includes("valide")
-                            ? "bg-green-100 text-green-700"
-                            : "bg-amber-100 text-amber-700"
+                      <div
+                        className={`${
+                          true ? "font-bold text-lg text-emerald-700" : "font-medium text-gray-800"
+                        } ${true ? "whitespace-pre-wrap" : ""} ${
+                          true
+                            ? "inline-block px-3 py-1 rounded-full text-sm " +
+                              (item.status_extrait?.toLowerCase()=== "validé" || item.status_extrait?.toLowerCase().includes("validé")
+                                ? "bg-green-100 text-green-800"
+                                : item.status_extrait?.toLowerCase() === "rejeté" || item.status_extrait?.toLowerCase().includes("rejeté")
+                                ? "bg-red-100 text-red-800"
+                                : "bg-amber-100 text-amber-800")
+                            : ""
                         }`}
                       >
                         {item.status_extrait || "—"}
-                      </span>
+                      </div>
                     </td>
                     <td className="p-4 text-center">
                       <button
@@ -326,7 +377,7 @@ export default function ValeursExtraites() {
     <DetailExtraitModal
         item={selectedItem}
         onClose={() => setSelectedItem(null)}
-        onValidationSuccess={loadExtractions}   // ← pour rafraîchir la liste
+        onValidationSuccess={loadExtractions}
     />
     )}
     </div>

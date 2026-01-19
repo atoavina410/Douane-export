@@ -194,6 +194,91 @@ class ValeurViewSet(ModelViewSet):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
+    # =====================================================
+    # IMPORT EXCEL
+    # =====================================================
+    @action(detail=False, methods=["post"], url_path="import-excel")
+    def import_excel(self, request):
+        file = request.FILES.get("file")
+        if not file:
+            return Response({"error": "Aucun fichier fourni"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Lecture du fichier Excel
+            df = pd.read_excel(file)
+
+            # Colonnes obligatoires
+            required_columns = ["codesh", "descrip", "unite", "quantite", "pu_fact", "date_effet", "id_utilisateur"]
+            missing = [col for col in required_columns if col not in df.columns]
+            if missing:
+                return Response(
+                    {"error": f"Colonnes obligatoires manquantes : {', '.join(missing)}"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            inserted, ignored, errors = 0, 0, []
+
+            # Transaction pour éviter les incohérences
+            with transaction.atomic():
+                for idx, row in df.iterrows():
+                    try:
+                        # Vérification des champs obligatoires
+                        for col in required_columns:
+                            if pd.isna(row[col]) or row[col] == "":
+                                errors.append(f"Ligne {idx+2} : champ '{col}' manquant")
+                                ignored += 1
+                                raise ValueError("Champ obligatoire manquant")
+
+                        # Vérification doublon par ref_fact
+                        ref_fact = row.get("ref_fact")
+                        if ref_fact and Valeur.objects.filter(ref_fact=ref_fact).exists():
+                            errors.append(f"Ligne {idx+2} : ref_fact {ref_fact} déjà existant")
+                            ignored += 1
+                            continue
+
+                        # Création de l'objet Valeur
+                        Valeur.objects.create(
+                            codesh=row.get("codesh"),
+                            descrip=row.get("descrip"),
+                            unite=row.get("unite"),
+                            quantite=row.get("quantite"),
+                            pu_fact=row.get("pu_fact"),
+                            pu_redr=row.get("pu_redr"),
+                            methode=row.get("methode"),
+                            incoterm=row.get("incoterm"),
+                            devise=row.get("devise"),
+                            source=row.get("source"),
+                            ref_fact=row.get("ref_fact"),
+                            status=row.get("status") or "Importé",
+                            details_marchandises=row.get("details_marchandises"),
+                            poid_brut=row.get("poid_brut"),
+                            poid_net=row.get("poid_net"),
+                            exportateur=row.get("exportateur"),
+                            pays_destinataire=row.get("pays_destinataire"),
+                            importateur=row.get("importateur"),
+                            conditionnement=row.get("conditionnement"),
+                            date_effet=row.get("date_effet"),
+                            # id_utilisateur=int(row.get("id_utilisateur")),
+                            # id_extraction=row.get("id_extraction") if not pd.isna(row.get("id_extraction")) else None
+                        )
+                        inserted += 1
+
+                    except Exception as e:
+                        # Si erreur sur une ligne, on l’ignore mais on continue
+                        if "Champ obligatoire" not in str(e):
+                            errors.append(f"Ligne {idx+2} : {str(e)}")
+                        continue
+
+            return Response({
+                "inserted": inserted,
+                "ignored": ignored,
+                "errors": errors
+            }, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 class ValeurExtraitViewSet(ModelViewSet):
     queryset = ValeurExtrait.objects.all()
     serializer_class = ValeurExtraitSerializer

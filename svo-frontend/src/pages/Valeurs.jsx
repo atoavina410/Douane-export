@@ -15,7 +15,7 @@ export default function Valeurs() {
   const loadData = async () => {
     try {
       const res = await api.get("valeurs/");
-      console.log("JSON RECU :", res.data); // OUVREZ VOTRE CONSOLE (F12) POUR VOIR CECI
+      // console.log("JSON RECU :", res.data); // OUVREZ VOTRE CONSOLE (F12) POUR VOIR CECI
     
       // On force la détection du tableau peu importe la structure
       const data = res.data.results || res.data; 
@@ -53,7 +53,7 @@ export default function Valeurs() {
       const res = await api.post("valeurs/import-excel/", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      alert(res.data.message);
+      // alert(res.data.message);
       loadData();
     } catch (error) {
       alert("Erreur lors de l'import.");
